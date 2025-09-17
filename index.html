@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresher Developer Interview Prep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application uses a tab-based navigation design to categorize interview topics (DSA, OOP, DBMS, etc.). This structure was chosen to break down the vast subject matter into digestible, user-selectable sections, preventing information overload. Users can focus on one area at a time. The core interaction involves clicking on a question card to reveal its answer, promoting active recall. A dashboard-style chart provides an at-a-glance overview of the topic distribution, setting the context for the user's preparation journey. This user-centric design facilitates focused and efficient study. -->
+    <!-- Visualization & Content Choices: 1. Report Info: Distribution of questions across different technical topics. -> Goal: Inform. -> Viz/Presentation Method: Donut Chart. -> Interaction: Tooltip on hover showing the percentage for each topic. -> Justification: Provides a quick, high-level understanding of which topics are most common in fresher interviews, helping users prioritize their study. -> Library/Method: Chart.js. 2. Report Info: Collections of question-and-answer pairs for each topic. -> Goal: Organize & Inform. -> Viz/Presentation Method: Interactive flip cards organized in a grid. -> Interaction: On-click event toggles the display of the answer. -> Justification: This method encourages active learning and self-assessment rather than passive reading. It mimics a flashcard experience, which is effective for memorization and understanding. -> Library/Method: Vanilla JavaScript with HTML/CSS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .nav-btn {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-btn.active {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+        .nav-btn:hover {
+            color: #4A90E2;
+        }
+        .question-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            perspective: 1000px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .question-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .question-card .answer {
+            display: none;
+            border-top: 1px solid #EAEAEA;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+        .question-card.open .answer {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800">Software Developer Interview Prep</h1>
+            <p class="mt-2 text-base sm:text-lg text-gray-600">A curated collection of common questions for fresher placements.</p>
+        </header>
+
+        <main id="app">
+            <section id="overview" class="mb-12">
+                 <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Topic Distribution</h2>
+                 <p class="text-center text-gray-600 max-w-2xl mx-auto mb-8">
+                    This section provides a visual breakdown of the typical subjects covered in fresher interviews. Understanding this distribution can help you prioritize your study time. Data Structures & Algorithms often form the core, but a solid foundation in fundamentals like OOP, DBMS, and Networks is also crucial.
+                </p>
+                <div class="chart-container">
+                    <canvas id="topicDistributionChart"></canvas>
+                </div>
+            </section>
+            
+            <section id="questions-section">
+                <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Explore Questions by Category</h2>
+                <p class="text-center text-gray-600 max-w-2xl mx-auto mb-8">
+                    Dive into specific topics to test your knowledge. Click on a category below to see a list of frequently asked questions. Click on any question card to reveal its answer. This interactive approach is designed to help you actively recall information and better prepare for your interviews.
+                </p>
+                <nav class="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 mb-8 border-b border-gray-200 pb-4">
+                    <button class="nav-btn active font-medium text-lg px-2 py-2" data-category="dsa">DSA</button>
+                    <button class="nav-btn font-medium text-lg px-2 py-2" data-category="oop">OOP</button>
+                    <button class="nav-btn font-medium text-lg px-2 py-2" data-category="dbms">DBMS</button>
+                    <button class="nav-btn font-medium text-lg px-2 py-2" data-category="cn">Networks</button>
+                    <button class="nav-btn font-medium text-lg px-2 py-2" data-category="os">OS</button>
+                    <button class="nav-btn font-medium text-lg px-2 py-2" data-category="hr">HR</button>
+                </nav>
+                <div id="questions-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const interviewData = {
+            dsa: [
+                { q: "What is the difference between an Array and a Linked List?", a: "Array is a static data structure with fixed size, storing elements at contiguous memory locations. Linked List is a dynamic data structure where elements are stored in nodes linked to each other, allowing for easier insertion/deletion but slower access." },
+                { q: "Explain Stack and Queue data structures.", a: "A Stack is a LIFO (Last-In, First-Out) structure. Think of a stack of plates. A Queue is a FIFO (First-In, First-Out) structure, like a line of people waiting." },
+                { q: "What is a Binary Search Tree (BST)?", a: "A BST is a node-based binary tree data structure which has the following properties: the left subtree of a node contains only nodes with keys lesser than the node’s key; the right subtree of a node contains only nodes with keys greater than the node’s key; both the left and right subtrees must also be binary search trees." },
+                { q: "What is the time complexity of Bubble Sort, Insertion Sort, and Merge Sort?", a: "Bubble Sort and Insertion Sort have an average and worst-case time complexity of O(n²). Merge Sort has a time complexity of O(n log n) in all cases (worst, average, and best)." },
+                { q: "Explain what a Hash Table is.", a: "A Hash Table is a data structure that maps keys to values using a hash function. It provides very fast average-case time complexity for insertion, deletion, and search operations, typically O(1)." },
+                { q: "What is the difference between DFS and BFS?", a: "DFS (Depth First Search) explores as far as possible along each branch before backtracking. It uses a stack. BFS (Breadth First Search) explores all neighbor nodes at the present depth prior to moving on to the nodes at the next depth level. It uses a queue." }
+            ],
+            oop: [
+                { q: "What are the four main pillars of OOP?", a: "Encapsulation, Abstraction, Inheritance, and Polymorphism." },
+                { q: "Explain Encapsulation.", a: "Encapsulation is the bundling of data (attributes) and methods (functions) that operate on the data into a single unit or class. It restricts direct access to some of an object's components, which is a means of preventing accidental interference and misuse of the data." },
+                { q: "What is Inheritance?", a: "Inheritance is a mechanism in which one class (child/subclass) acquires the property of another class (parent/superclass). It supports code reusability." },
+                { q: "Define Polymorphism.", a: "Polymorphism means 'many forms'. It allows objects of different classes to be treated as objects of a common superclass. The most common use of polymorphism in OOP occurs when a parent class reference is used to refer to a child class object. It can be achieved through method overloading and method overriding." },
+                { q: "What is the difference between a class and an object?", a: "A class is a blueprint or template for creating objects. An object is an instance of a class. The class defines attributes and methods, while the object is a concrete entity with specific values for those attributes." },
+                { q: "What is abstraction?", a: "Abstraction means displaying only essential information and hiding the implementation details from the user. For example, a driver of a car only needs to know about the steering wheel and pedals, not the internal mechanics of the engine." }
+            ],
+            dbms: [
+                { q: "What is DBMS?", a: "DBMS (Database Management System) is a software for storing and retrieving users' data while considering appropriate security measures. It consists of a group of programs that manipulate the database." },
+                { q: "What is the difference between SQL and NoSQL?", a: "SQL databases are relational, use structured query language, and have a predefined schema. They are vertically scalable. NoSQL databases are non-relational, have dynamic schemas for unstructured data, and are horizontally scalable." },
+                { q: "What are Primary Key and Foreign Key?", a: "A Primary Key is a constraint that uniquely identifies each record in a table. It must contain unique values and cannot contain NULL values. A Foreign Key is a key used to link two tables together. It is a field (or collection of fields) in one table that refers to the Primary Key in another table." },
+                { q: "Explain database normalization.", a: "Normalization is the process of organizing data in a database to reduce data redundancy and improve data integrity. It involves dividing larger tables into smaller, well-structured tables and defining relationships between them." },
+                { q: "What is a JOIN in SQL?", a: "A JOIN clause is used to combine rows from two or more tables, based on a related column between them. Common types include INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN." },
+                { q: "What is an index in a database?", a: "An index is a data structure that improves the speed of data retrieval operations on a database table at the cost of additional writes and storage space to maintain the index data structure. Indexes are used to quickly locate data without having to search every row in a database table every time a table is accessed." }
+            ],
+            cn: [
+                { q: "What are the layers of the OSI Model?", a: "The 7 layers are: 7. Application, 6. Presentation, 5. Session, 4. Transport, 3. Network, 2. Data Link, 1. Physical." },
+                { q: "What is the difference between TCP and UDP?", a: "TCP (Transmission Control Protocol) is a connection-oriented protocol that provides reliable, ordered, and error-checked delivery of a stream of octets. UDP (User Datagram Protocol) is a connectionless protocol that is faster but less reliable; it doesn't guarantee delivery or order." },
+                { q: "What is an IP address?", a: "An IP address is a unique numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication. It serves two main functions: host or network interface identification and location addressing." },
+                { q: "What is DNS?", a: "DNS (Domain Name System) is the phonebook of the Internet. Humans access information online through domain names, like google.com. Web browsers interact through Internet Protocol (IP) addresses. DNS translates domain names to IP addresses so browsers can load Internet resources." },
+                { q: "What is a firewall?", a: "A firewall is a network security device that monitors incoming and outgoing network traffic and decides whether to allow or block specific traffic based on a defined set of security rules." }
+            ],
+            os: [
+                { q: "What is an Operating System?", a: "An Operating System (OS) is a system software that manages computer hardware, software resources, and provides common services for computer programs. It acts as an intermediary between the user and the computer hardware." },
+                { q: "Explain the concept of a process and a thread.", a: "A process is an instance of a program that is being executed. It has its own memory space. A thread is the smallest unit of execution within a process. Multiple threads can exist within a single process and share its resources like memory, which makes them lightweight." },
+                { q: "What is a deadlock?", a: "A deadlock is a situation where two or more processes are blocked forever, waiting for each other to release a resource. The four necessary conditions for a deadlock are: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait." },
+                { q: "What is the difference between virtual memory and physical memory?", a: "Physical memory (RAM) is the actual hardware memory available in the computer. Virtual memory is a memory management technique that provides an 'idealized abstraction of the storage resources that are actually available on a given machine' which 'creates the illusion to users of a very large (main) memory'." },
+                { q: "What is process scheduling?", a: "Process scheduling is the activity of the process manager that handles the removal of the running process from the CPU and the selection of another process on the basis of a particular strategy. Common scheduling algorithms include FCFS, SJF, Priority, and Round Robin." }
+            ],
+            hr: [
+                { q: "Tell me about yourself.", a: "Structure your answer: Start with your current situation (e.g., final year student), briefly mention your key technical skills and projects relevant to the role, and end with your career aspirations and why you're interested in this company." },
+                { q: "What are your strengths and weaknesses?", a: "For strengths, choose 2-3 qualities relevant to a software developer role (e.g., problem-solving, quick learner, collaborative) and provide brief examples. For weaknesses, choose a real but manageable weakness, and explain how you are working to improve it (e.g., 'I used to struggle with public speaking, so I've started actively presenting in my project demos to get more comfortable.')." },
+                { q: "Why do you want to work for our company?", a: "Research the company. Mention specific aspects that appeal to you, such as their products, company culture, tech stack, or recent achievements. Connect your skills and interests to what the company does." },
+                { q: "Where do you see yourself in 5 years?", a: "Show ambition and a desire for growth. A good answer could be: 'In 5 years, I hope to have become a proficient developer with deep expertise in a specific area, like front-end or cloud computing. I aim to take on more responsibilities, perhaps mentoring junior developers, and contribute significantly to complex projects.'" },
+                { q: "Do you have any questions for us?", a: "Always say yes. Prepare 2-3 thoughtful questions. Ask about the team structure, the challenges the team is facing, opportunities for learning and growth, or what a typical day looks like for a junior developer." }
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const questionsContainer = document.getElementById('questions-container');
+            const navButtons = document.querySelectorAll('.nav-btn');
+
+            const renderQuestions = (category) => {
+                questionsContainer.innerHTML = '';
+                const questions = interviewData[category] || [];
+                questions.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'question-card p-6';
+                    card.innerHTML = `
+                        <div class="question font-semibold text-gray-800">${item.q}</div>
+                        <div class="answer text-gray-600">${item.a}</div>
+                    `;
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('open');
+                    });
+                    questionsContainer.appendChild(card);
+                });
+            };
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const category = button.getAttribute('data-category');
+                    renderQuestions(category);
+                });
+            });
+
+            renderQuestions('dsa');
+
+            const ctx = document.getElementById('topicDistributionChart').getContext('2d');
+            const topicCounts = Object.keys(interviewData).map(key => interviewData[key].length);
+            const topicLabels = Object.keys(interviewData).map(key => key.toUpperCase());
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topicLabels,
+                    datasets: [{
+                        label: 'Number of Questions',
+                        data: topicCounts,
+                        backgroundColor: [
+                            '#4A90E2',
+                            '#50E3C2',
+                            '#F5A623',
+                            '#BD10E0',
+                            '#7ED321',
+                            '#F8E71C'
+                        ],
+                        borderColor: '#FDFBF8',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    family: 'Inter'
+                                },
+                                color: '#4A4A4A',
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        label += `${context.raw} questions (${percentage}%)`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        });
+    </script>
+</body>
+</html>
